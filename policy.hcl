@@ -394,7 +394,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.1 Ensure that Azure Defender is set to On for Servers (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'VirtualMachines'
         AND pricing_properties_tier = 'Standard';
@@ -414,7 +414,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.2 Ensure that Azure Defender is set to On for App Service (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'AppServices'
         AND pricing_properties_tier = 'Standard';
@@ -434,7 +434,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.3 Ensure that Azure Defender is set to On for Azure SQL database servers (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'SqlServers'
         AND pricing_properties_tier = 'Standard';
@@ -454,7 +454,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.4 Ensure that Azure Defender is set to On for SQL servers on machines (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'SqlserverVirtualMachines'
         AND pricing_properties_tier = 'Standard';
@@ -475,7 +475,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.5 Ensure that Azure Defender is set to On for Storage (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'StorageAccounts'
         AND pricing_properties_tier = 'Standard';
@@ -495,7 +495,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.6 Ensure that Azure Defender is set to On for Kubernetes (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'KubernetesService'
         AND pricing_properties_tier = 'Standard';
@@ -515,7 +515,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.7 Ensure that Azure Defender is set to On for Container Registries (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'ContainerRegistry'
         AND pricing_properties_tier = 'Standard';
@@ -535,7 +535,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.8 Ensure that Azure Defender is set to On for Key Vault (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", pricing_properties_tier AS tier
+        SELECT subscription_id, id, "name", pricing_properties_tier AS tier
         FROM azure_security_pricings asp
         WHERE "name" = 'KeyVaults'
         AND pricing_properties_tier = 'Standard';
@@ -555,7 +555,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.9 Ensure that Windows Defender ATP (WDATP) integration with Security Center is selected (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", enabled
+        SELECT subscription_id, id, "name", enabled
         FROM azure_security_settings ass
         WHERE "name" = 'WDATP'
         AND enabled = TRUE;
@@ -575,7 +575,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.10 Ensure that Microsoft Cloud App Security (MCAS) integration with Security Center is selected (Manual)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name", enabled
+        SELECT subscription_id, id, "name", enabled
         FROM azure_security_settings ass
         WHERE "name" = 'MCAS'
         AND enabled = TRUE;
@@ -595,7 +595,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.11 Ensure that 'Automatic provisioning of monitoring agent' is set to 'On' (Automated)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name"
+        SELECT subscription_id, id, "name"
         FROM azure_security_auto_provisioning_settings asaps
         WHERE "name" = 'default'
         AND auto_provision = 'On';
@@ -615,7 +615,7 @@ policy "cis-v1.30" {
       description   = "Azure CIS 2.11 Ensure that 'Automatic provisioning of monitoring agent' is set to 'On' (Automated)"
       expect_output = true
       query         = <<EOF
-        SELECT id, "name"
+        SELECT subscription_id, id, "name"
         FROM azure_security_auto_provisioning_settings asaps
         WHERE "name" = 'default'
         AND auto_provision = 'On';
@@ -717,7 +717,7 @@ policy "cis-v1.30" {
     query "3.1" {
       description = "Azure CIS 3.1: Ensure that 'Secure transfer required' is set to 'Enabled'"
       query       = <<EOF
-        SELECT id, name, type
+        SELECT subscription_id, id, name, type
         FROM azure_storage_accounts
         WHERE NOT enable_https_traffic_only
       EOF
@@ -1358,6 +1358,7 @@ policy "cis-v1.30" {
         WITH subscription_categories AS (
           SELECT DISTINCT
             subs.id,
+            subs.subscription_id,
             CASE
               WHEN ds.cq_id = logs.diagnostic_setting_cq_id THEN logs.category
               ELSE NULL
@@ -1368,12 +1369,12 @@ policy "cis-v1.30" {
               ON subs.id=ds.resource_uri,
             azure_monitor_diagnostic_setting_logs logs
         )
-        SELECT id
+        SELECT id, subscription_id
         FROM subscription_categories
         WHERE
           category IS NULL
           OR category IN ('Administrative', 'Alert', 'Policy', 'Security')
-        GROUP by id
+        GROUP by id, subscription_id
         HAVING COUNT(category) < 4
       EOF
       risk {
@@ -1390,7 +1391,7 @@ policy "cis-v1.30" {
     query "5.1.3" {
       description = "Ensure the storage container storing the activity logs is not publicly accessible"
       query       = <<EOF
-        SELECT a.id AS account_id, c.id AS container_id, c.name AS container_name
+        SELECT a.subscription_id AS subscription_id, a.id AS account_id, c.id AS container_id, c.name AS container_name
         FROM azure_storage_accounts a JOIN azure_storage_containers c ON a.cq_id=c.account_cq_id
         WHERE a.id IN (SELECT DISTINCT storage_account_id FROM azure_monitor_log_profiles)
               AND c.name LIKE 'insights-%'
@@ -1410,7 +1411,7 @@ policy "cis-v1.30" {
     query "5.1.4" {
       description = "Azure CIS 5.1.4: Ensure the storage account containing the container with activity logs is encrypted with BYOK (Use Your Own Key)"
       query       = <<EOF
-        SELECT id, name
+        SELECT subscription_id, id, name
         FROM azure_storage_accounts
         WHERE id IN (SELECT DISTINCT storage_account_id FROM azure_monitor_log_profiles)
               AND (encryption_key_source != 'Microsoft.Keyvault'
@@ -1430,7 +1431,7 @@ policy "cis-v1.30" {
     query "5.1.5" {
       description = "Azure CIS 5.1.5: Ensure that logging for Azure KeyVault is 'Enabled'"
       query       = <<EOF
-        SELECT v.id
+        SELECT v.subscription_id, v.id
         FROM
           azure_keyvault_vaults v
             LEFT OUTER JOIN azure_monitor_diagnostic_settings ds
@@ -1456,7 +1457,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.1: Ensure that Activity Log Alert exists for Create Policy Assignment"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1472,7 +1473,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1491,7 +1492,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.2: Ensure that Activity Log Alert exists for Delete Policy Assignment"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1507,7 +1508,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1526,7 +1527,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.3: Ensure that Activity Log Alert exists for Create or Update Network Security Group"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1542,7 +1543,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1561,7 +1562,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.4: Ensure that Activity Log Alert exists for Delete Network Security Group"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1577,7 +1578,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1596,7 +1597,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.5: Ensure that Activity Log Alert exists for Create or Update Network Security Group Rule"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1612,7 +1613,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1631,7 +1632,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.6: Ensure that activity log alert exists for the Delete Network Security Group Rule"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1647,7 +1648,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1666,7 +1667,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.7: Ensure that Activity Log Alert exists for Create or Update Security Solution"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1682,7 +1683,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1701,7 +1702,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.8: Ensure that Activity Log Alert exists for Delete Security Solution"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1717,7 +1718,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1736,7 +1737,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 5.2.9: Ensure that Activity Log Alert exists for Create or Update or Delete SQL Server Firewall Rule"
       query       = <<EOF
         WITH subs_alerts AS (
-          SELECT subs.id, (
+          SELECT subs.subscription_id, subs.id, (
                 SELECT COUNT(*)
                 FROM azure_monitor_activity_log_alerts alerts JOIN azure_monitor_activity_log_alert_conditions conds ON alerts.cq_id = conds.activity_log_alert_cq_id
                 WHERE array_position(alerts.scopes, subs.id) IS NOT NULL
@@ -1752,7 +1753,7 @@ policy "cis-v1.30" {
           ) as ok
           FROM azure_subscription_subscriptions subs
         )
-        SELECT id
+        SELECT subscription_id, id
         FROM subs_alerts
         WHERE ok IS DISTINCT FROM 3
       EOF
@@ -1839,7 +1840,7 @@ policy "cis-v1.30" {
       description = "Azure CIS 6.3 Ensure no SQL Databases allow ingress 0.0.0.0/0 (ANY IP) (Automated)"
       //todo think about "other combinations which allows access to wider public IP ranges including Windows Azure IP ranges."
       query = <<EOF
-      SELECT ass.id AS server_id, ass."name" AS server_name
+      SELECT ass.subscription_id AS subscription_id, ass.id AS server_id, ass."name" AS server_name
       FROM azure_sql_servers ass
       LEFT JOIN
        azure_sql_server_firewall_rules assfr ON
@@ -1862,7 +1863,7 @@ policy "cis-v1.30" {
     query "6.4" {
       description = "Azure CIS 6.4 Ensure that Network Security Group Flow Log retention period is 'greater than 90 days' (Automated)"
       query       = <<EOF
-      SELECT ansg."name" AS nsg_name, ansg.id AS nsg_name, ansgfl.retention_policy_enabled, ansgfl.retention_policy_days
+      SELECT ansg.subscription_id AS subscription_id, ansg."name" AS nsg_name, ansg.id AS nsg_name, ansgfl.retention_policy_enabled, ansgfl.retention_policy_days
       FROM azure_network_security_groups ansg
       LEFT JOIN azure_network_security_group_flow_logs ansgfl ON
       ansg.cq_id = ansgfl.security_group_cq_id
@@ -1938,7 +1939,7 @@ policy "cis-v1.30" {
     query "7.1" {
       description = "Azure CIS 7.1 Ensure Virtual Machines are utilizing Managed Disks (Manual)"
       query       = <<EOF
-      SELECT subscription_id , id, name
+      SELECT subscription_id, id, name
       FROM azure_compute_virtual_machines WHERE storage_profile -> 'osDisk' -> 'managedDisk' -> 'id' IS NULL;
     EOF
       risk {
@@ -1955,7 +1956,7 @@ policy "cis-v1.30" {
     query "7.2" {
       description = "Azure CIS 7.2 Ensure that 'OS and Data' disks are encrypted with CMK (Automated)"
       query       = <<EOF
-      SELECT v.id AS vm_id , v.name AS vm_name, d.id AS disk_id , d.name AS disk_name, d.encryption_type
+      SELECT v.subscription_id AS subscription_id, v.id AS vm_id , v.name AS vm_name, d.id AS disk_id , d.name AS disk_name, d.encryption_type
       FROM azure_compute_virtual_machines v
       JOIN azure_compute_disks d ON
       LOWER(v.id) = LOWER(d.managed_by)
@@ -2076,7 +2077,7 @@ policy "cis-v1.30" {
     query "8.1" {
       description = "Azure CIS 8.1 Ensure that the expiration date is set on all keys (Automated)"
       query       = <<EOF
-      SELECT akv.id AS vault_id, akv."name" AS vault_name, akvk.kid AS key_id
+      SELECT akv.subscription_id AS subscription_id, akv.id AS vault_id, akv."name" AS vault_name, akvk.kid AS key_id
       FROM azure_keyvault_vaults akv
       LEFT JOIN
             azure_keyvault_vault_keys akvk ON
@@ -2099,7 +2100,7 @@ policy "cis-v1.30" {
     query "8.2" {
       description = "Azure CIS 8.2 Ensure that the expiration date is set on all Secrets (Automated)"
       query       = <<EOF
-      SELECT akv.id AS vault_id, akv."name" AS vault_name, akvs.id AS key_id
+      SELECT akv.subscription_id AS subscription_id, akv.id AS vault_id, akv."name" AS vault_name, akvs.id AS key_id
       FROM azure_keyvault_vaults akv
       LEFT JOIN
             azure_keyvault_vault_secrets akvs ON
@@ -2136,7 +2137,7 @@ policy "cis-v1.30" {
     query "8.4" {
       description = "Azure CIS 8.4 Ensure the key vault is recoverable (Automated)"
       query       = <<EOF
-      SELECT id, "name", enable_purge_protection
+      SELECT subscription_id, id, "name", enable_purge_protection
       FROM azure_keyvault_vaults akv
       WHERE enable_soft_delete != TRUE
       OR enable_purge_protection != TRUE;
@@ -2155,7 +2156,7 @@ policy "cis-v1.30" {
     query "8.5" {
       description = "Azure CIS 8.5 Enable role-based access control (RBAC) within Azure Kubernetes Services (Automated)"
       query       = <<EOF
-      SELECT id, "name", enable_rbac
+      SELECT subscription_id, id, "name", enable_rbac
       FROM azure_container_managed_clusters acmc
       WHERE enable_rbac != TRUE;
     EOF
